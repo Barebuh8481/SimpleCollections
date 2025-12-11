@@ -1,25 +1,23 @@
 #pragma once
 #include <stdexcept>
-#include <utility>
+#include <utility> // Для std::move, std::swap
 
-// Шаблон класса Stack
 template <class T>
 class Stack {
 private:
-    T* data;          // Атрибут: Указатель на массив
-    size_t sz;        // Атрибут: Текущий размер (вершина стека)
-    size_t cap;       // Атрибут: Вместимость
+    T* data;    // Динамический массив
+    size_t sz;  // Вершина стека
+    size_t cap; // Вместимость
 
 public:
-    // Конструктор
+
     Stack() : data(nullptr), sz(0), cap(0) {}
 
-    // Деструктор
     ~Stack() {
         delete[] data;
     }
 
-    // Конструктор копирования
+
     Stack(const Stack& other) : sz(other.sz), cap(other.cap) {
         if (other.data) {
             data = new T[cap];
@@ -30,14 +28,14 @@ public:
         }
     }
 
-    // Конструктор перемещения
+    // Конструктор перемещения 
     Stack(Stack&& other) noexcept : data(other.data), sz(other.sz), cap(other.cap) {
         other.data = nullptr;
         other.sz = 0;
         other.cap = 0;
     }
 
-    // Оператор присваивания (реализуем через copy-and-swap идиому для краткости)
+    // Оператор присваивания (Copy-and-Swap) 
     Stack& operator=(Stack other) {
         std::swap(data, other.data);
         std::swap(sz, other.sz);
@@ -45,9 +43,10 @@ public:
         return *this;
     }
 
-    // Метод: Добавить в стек
+    // Добавление элемента 
     void push(const T& value) {
         if (sz >= cap) {
+            // Ручное расширение памяти (как в векторе)
             size_t newCap = (cap == 0) ? 1 : cap * 2;
             T* newData = new T[newCap];
             for (size_t i = 0; i < sz; ++i) newData[i] = std::move(data[i]);
@@ -58,22 +57,35 @@ public:
         data[sz++] = value;
     }
 
-    // Метод: Удалить последний элемент
-    void pop() {
-        if (sz > 0) {
-            sz--;
-            // Мы не удаляем физически память, просто сдвигаем "вершину"
+    // Добавление перемещением
+    void push(T&& value) {
+        if (sz >= cap) {
+            size_t newCap = (cap == 0) ? 1 : cap * 2;
+            T* newData = new T[newCap];
+            for (size_t i = 0; i < sz; ++i) newData[i] = std::move(data[i]);
+            delete[] data;
+            data = newData;
+            cap = newCap;
         }
+        data[sz++] = std::move(value);
     }
 
-    // Метод: Получить верхний элемент
+    // Удаление элемента 
+    void pop() {
+        if (sz > 0) sz--;
+    }
+
+    // Получение верхнего элемента 
     const T& top() const {
-        if (sz == 0) throw std::logic_error("Stack is empty");
+        if (sz == 0) throw std::out_of_range("Stack is empty");
         return data[sz - 1];
     }
 
-    // Метод: Проверка на пустоту
+    // Проверка на пустоту 
     bool empty() const {
         return sz == 0;
     }
+
+    // Геттеры
+    size_t size() const { return sz; }
 };

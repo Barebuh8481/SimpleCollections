@@ -1,50 +1,48 @@
 #pragma once
-#include <algorithm> // Для std::swap и std::copy
+#include <algorithm> // Для std::copy, std::move, std::swap
 #include <stdexcept> // Для исключений
 
-// Синтаксис: template <class T> - объявление шаблона класса.
-// T - это параметр типа (заполнитель), который станет int, double и т.д.
 template <class T>
 class Vector {
 private:
-    T* data;          // Атрибут: Указатель на динамический массив элементов
-    size_t sz;        // Атрибут: Текущее количество элементов
-    size_t cap;       // Атрибут: Вместимость (сколько памяти выделено)
+    T* data;          // Указатель на массив
+    size_t sz;        // Текущий размер
+    size_t cap;       // Вместимость памяти
 
 public:
-    // Конструктор по умолчанию
+    // 1. Конструктор по умолчанию 
     Vector() : data(nullptr), sz(0), cap(0) {}
 
-    // Деструктор (освобождает память)
+    // 2. Деструктор 
     ~Vector() {
         delete[] data;
     }
 
-    // Конструктор копирования (Deep Copy)
+    // 3. Конструктор копирования (Deep Copy) 
     Vector(const Vector& other) : sz(other.sz), cap(other.cap) {
         if (other.data) {
-            data = new T[cap]; // Выделение новой памяти
-            std::copy(other.data, other.data + sz, data); // Копирование значений
+            data = new T[cap];
+            // Используем copy для обычных типов
+            std::copy(other.data, other.data + sz, data);
         }
         else {
             data = nullptr;
         }
     }
 
-    // Конструктор перемещения (Move Constructor) - забирает ресурсы у временного объекта
+    // 4. Конструктор перемещения (Move) 
     Vector(Vector&& other) noexcept : data(other.data), sz(other.sz), cap(other.cap) {
-        // "Обнуляем" старый объект, так как мы украли его данные
         other.data = nullptr;
         other.sz = 0;
         other.cap = 0;
     }
 
-    // Оператор присваивания копированием
+    // 5. Оператор присваивания (Копирование) 
     Vector& operator=(const Vector& other) {
-        if (this != &other) { // Защита от самоприсваивания
+        if (this != &other) {
             T* newData = new T[other.cap];
             std::copy(other.data, other.data + other.sz, newData);
-            delete[] data; // Удаляем старое
+            delete[] data;
             data = newData;
             sz = other.sz;
             cap = other.cap;
@@ -52,15 +50,13 @@ public:
         return *this;
     }
 
-    // Оператор присваивания перемещением
+    // 6. Оператор присваивания (Перемещение) 
     Vector& operator=(Vector&& other) noexcept {
         if (this != &other) {
-            delete[] data; // Очищаем свою память
-            // Забираем чужую
+            delete[] data;
             data = other.data;
             sz = other.sz;
             cap = other.cap;
-            // Обнуляем чужую
             other.data = nullptr;
             other.sz = 0;
             other.cap = 0;
@@ -68,44 +64,40 @@ public:
         return *this;
     }
 
-    // Метод: Добавление элемента (копия)
+    // Добавление элемента (копия) 
     void push_back(const T& value) {
-        if (sz >= cap) {
-            reserve(cap == 0 ? 1 : cap * 2); // Увеличиваем память в 2 раза
-        }
+        if (sz >= cap) reserve(cap == 0 ? 1 : cap * 2);
         data[sz++] = value;
     }
 
-    // Метод: Добавление элемента (перемещение)
+    // Добавление элемента (перемещение/move) 
     void push_back(T&& value) {
-        if (sz >= cap) {
-            reserve(cap == 0 ? 1 : cap * 2);
-        }
+        if (sz >= cap) reserve(cap == 0 ? 1 : cap * 2);
         data[sz++] = std::move(value);
     }
 
-    // Метод: Получение размера
-    size_t size() const {
-        return sz;
-    }
+    // Получение размера 
+    size_t size() const { return sz; }
 
-    // Метод: Получение элемента по индексу (для удобства вывода)
+    // Получение вместимости
+    size_t capacity() const { return cap; }
+
+    // Оператор доступа по индексу
     T& operator[](size_t index) {
         if (index >= sz) throw std::out_of_range("Index out of range");
         return data[index];
     }
 
-    // Итераторы для совместимости с range-based for и STL
+    // Итераторы 
     T* begin() { return data; }
     T* end() { return data + sz; }
 
-private:
-    // Вспомогательный метод для перевыделения памяти
+    // Резервирование памяти
     void reserve(size_t newCap) {
         if (newCap <= cap) return;
         T* newData = new T[newCap];
         if (data) {
-            // Перемещаем старые данные в новую память
+            // Перемещаем старые элементы в новую память
             for (size_t i = 0; i < sz; ++i) {
                 newData[i] = std::move(data[i]);
             }

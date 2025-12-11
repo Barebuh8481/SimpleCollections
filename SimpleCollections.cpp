@@ -1,62 +1,82 @@
 ﻿#include <iostream>
+#include <chrono>
 #include <string>
-#include <chrono>   
 #include <windows.h>
+#include <iomanip>
 
 #include "Vector.hpp"
 #include "Stack.hpp"
 
 using namespace std;
+using namespace std::chrono;
 
 int main() {
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
 
-    cout << "=== Демонстрация Vector <int> ===" << endl;
-    Vector<int> myVec;
-    myVec.push_back(10);
-    myVec.push_back(20);
-    myVec.push_back(30);
+    cout << fixed << setprecision(9);
 
-    // Использование итераторов (range-based for)
-    cout << "Элементы вектора: ";
-    for (const auto& val : myVec) {
-        cout << val << " ";
+    const int N = 20000000;
+
+    cout << "Данные: " << N << " элементов.\n" << endl;
+
+
+    cout << "[Тест Vector]" << endl;
+    {
+        Vector<int> vec;
+        vec.reserve(10);
+
+        // 1. Быстрое добавление (есть место)
+        auto start = high_resolution_clock::now();
+        vec.push_back(1);
+        auto end = high_resolution_clock::now();
+
+        // ПРЕВРАЩАЕМ В СЕКУНДЫ (double)
+        duration<double> fastTime = end - start;
+        cout << "1. Быстрый push (пустой):   " << fastTime.count() << " сек." << endl;
+
+  
+        vec.reserve(N);
+        for (size_t i = vec.size(); i < N; ++i) {
+            vec.push_back(i);
+        }
+
+        // 2. Медленное добавление (нужна новая память)
+        start = high_resolution_clock::now();
+        vec.push_back(999);
+        end = high_resolution_clock::now();
+
+        duration<double> slowTime = end - start;
+        cout << "2. Медленный push (полный): " << slowTime.count() << " сек." << endl;
     }
-    cout << "\nРазмер: " << myVec.size() << endl;
 
-    cout << "\n=== Демонстрация Stack <string> ===" << endl;
-    Stack<string> myStack;
-    myStack.push("Петров");
-    myStack.push("Лев");
-    myStack.push("Евгеньевич");
+    cout << "\n------------------------------------------------\n";
 
-    cout << "Верхний элемент: " << myStack.top() << endl;
-    myStack.pop();
-    cout << "Верхний элемент после pop(): " << myStack.top() << endl;
 
-    cout << "\n=== Сравнение производительности (100,000,000 push) ===" << endl;
+    cout << "[Тест Stack]" << endl;
+    {
+        Stack<int> st;
 
-    // Тест скорости Vector
-    auto start = chrono::high_resolution_clock::now();
-    Vector<int> testVec;
-    for (int i = 0; i < 100000000; ++i) {
-        testVec.push_back(i);
+        // 1. Быстрое добавление
+        auto start = high_resolution_clock::now();
+        st.push(1);
+        auto end = high_resolution_clock::now();
+
+        duration<double> fastTime = end - start;
+        cout << "1. Быстрый push (пустой):   " << fastTime.count() << " сек." << endl;
+
+        int limit = 16777216;
+        for (int i = st.size(); i < limit; ++i) {
+            st.push(i);
+        }
+
+        // 2. Медленное добавление
+        start = high_resolution_clock::now();
+        st.push(999);
+        end = high_resolution_clock::now();
+
+        duration<double> slowTime = end - start;
+        cout << "2. Медленный push (полный): " << slowTime.count() << " сек." << endl;
     }
-    auto end = chrono::high_resolution_clock::now();
-    chrono::duration<double> diff = end - start;
-    cout << "Vector push_back: " << diff.count() << " сек." << endl;
-
-    // Тест скорости Stack
-    start = chrono::high_resolution_clock::now();
-    Stack<int> testStack;
-    for (int i = 0; i < 100000000; ++i) {
-        testStack.push(i);
-    }
-    end = chrono::high_resolution_clock::now();
-    diff = end - start;
-    cout << "Stack push:       " << diff.count() << " сек." << endl;
-
-    cout << "\nПрограмма завершена успешно." << endl;
     return 0;
 }
